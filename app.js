@@ -1,25 +1,34 @@
 const express = require("express");
 const path = require("path");
+const morgan = require("morgan");
+const session = require("express-session");
+//const multer = require('multer')
+const cookieParser = require("cookie-parser");
 
 const app = express();
 
 app.set("port", process.env.PORT || 3000);
 
-app.use((req, res, next) => {
-  console.log("모든 요청에 실행하고 싶습니다.");
-  next();
-});
-
-app.get(
-  "/",
-  (req, res, next) => {
-    res.sendFile(path.join(__dirname, "index.html"));
-    next("route");
-  },
-  (req, res) => {
-    console.log("실행되나요");
-  }
+app.use(morgan("dev"));
+//app.use("/", express.static(__dirname, "public-3030"));
+app.use(cookieParser("dustvoyager"));
+app.use(
+  session({
+    resave: false,
+    saveUninitialized: false,
+    secret: "dustvoyager",
+    cookie: {
+      httpOnly: true,
+    },
+  })
 );
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+app.get("/", (req, res, next) => {
+  req.session;
+  res.sendFile(path.join(__dirname, "index.html"));
+});
 
 app.get("/", (req, res) => {
   console.log("실행됩니다.");
@@ -42,7 +51,7 @@ app.get("/about", (req, res) => {
 });
 
 app.use((req, res, next) => {
-  res.send("404 입니다.");
+  res.status(404).send("404 입니다.");
 });
 
 //error middleware는 반드시 4개를 다 작성해줘야한다.
