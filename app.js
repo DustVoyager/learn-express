@@ -2,7 +2,8 @@ const express = require("express");
 const path = require("path");
 const morgan = require("morgan");
 const session = require("express-session");
-//const multer = require('multer')
+const multer = require("multer");
+const fs = require("fs");
 const cookieParser = require("cookie-parser");
 
 const app = express();
@@ -22,8 +23,36 @@ app.use(
     },
   })
 );
+// 미들웨어 확장
+app.use("/", (req, res, next) => {
+  if (req.session.id) {
+    express.static(__dirname, "public")(req, res, next);
+  } else {
+    next();
+  }
+});
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+try {
+  fs.readdirSync("uploads");
+} catch (error) {
+  console.error("upload폴더가 없습니다.");
+  fs.mkdirSync("uploads");
+}
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination(req, file, done) {
+      done(null, "uploads/");
+    },
+    filename(req, file, done) {
+      const ext = path.extname(file.originalname);
+      done(null, path.basename(file.originalname, ext) + Date.now() + ext);
+    },
+  }),
+  limits: { fileSize: 5 * 1024 * 1024 },
+});
 
 app.get("/", (req, res, next) => {
   req.session;
